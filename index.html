@@ -1,178 +1,1858 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ProResume Builder</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Resume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
 
+            .print-page {
+                page-break-after: always;
+            }
+        }
+
+        .skill-tag {
+            transition: all 0.2s;
+        }
+
+        .skill-tag:hover {
+            transform: translateY(-2px);
+        }
+
+        .progress-step.active {
+            background: black;
+            transition: 0.2s;
+        }
+
+        .resume-preview {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #e0e3ef;
+            box-shadow: 0 0 0 3px rgba(202, 204, 211, 0.1);
+        }
+
+        .ats-gauge {
+            background: conic-gradient(from 0deg,
+                    #ef4444 0deg,
+                    #f59e0b 72deg,
+                    #10b981 144deg,
+                    #10b981 360deg);
+        }
+
+        .score-needle {
+            transition: transform 3s ease;
+            transform-origin: bottom center;
+        }
+    </style>
     <link rel="stylesheet" href="style.css" />
-  </head>
+</head>
 
-  <body>
-    <!-- App Header -->
-    <header class="app-header">
-      <div class="header-inner">
-        <a href="#" class="brand">
-          <div class="brand-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 16 16"
-              fill="currentColor"
-            >
-              <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-              <path
-                d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z"
-              />
-            </svg>
-          </div>
-          <span class="brand-text">ProResume</span>
-        </a>
+<body>
+    <!-- header -->
+    <header class="bg-[#4a0404]/70 backdrop-blur-md shadow-2xl border-b border-white/10 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Resume Buddy</h1>
+                    <p class="text-sm text-red-200/80">Create ATS-optimized professional resumes</p>
+                </div>
 
-        <div class="header-actions">
-          <div class="status-indicator">
-            <span class="status-dot"></span>
-            <span id="saveStatus">Auto-saved</span>
-          </div>
+                <div class="flex gap-3">
+                    <button onclick="clearLocalStorage()"
+                        class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Clear Data
+                    </button>
+                    <button onclick="navigateToSection(0)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Personal Info
+                    </button>
+                    <button onclick="navigateToSection(1)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Education
+                    </button>
+                    <button onclick="navigateToSection(2)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Publications
+                    </button>
+                    <button onclick="navigateToSection(3)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Experience
+                    </button>
+                    <button onclick="navigateToSection(4)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Skills
+                    </button>
+                    <button onclick="navigateToSection(5)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Projects
+                    </button>
+                    <button onclick="navigateToSection(6)"
+                        class="progress-step w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-gray-900 text-gray-100 hover:bg-red-700 transition">
+                        Additional
+                    </button>
+                    <div class="mt-6 px-8 my-auto flex-auto">
+                        <div class="text-white rounded-md bg-[length:50px_50px]">Progress</div>
+                        <div class="text-white" id="progressPercent">0%</div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar"
+                                class="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <button onclick="generatePDF()"
+                        class="px-4 py-2 bg-white hover:bg-red-50 text-red-900 font-bold rounded-lg shadow-lg transition-all duration-300 text-sm">
+                        Download PDF
+                    </button>
 
-          <button id="atsBtn" class="btn btn-outline">
-            ATS <span id="atsScore">0</span>%
-          </button>
-
-          <button id="themeToggle" class="btn btn-secondary">
-            Dark Mode
-          </button>
-
-          <button id="resetBtn" class="btn btn-secondary">Reset</button>
-
-          <button id="downloadBtn" class="btn btn-primary">
-            Download PDF
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Layout -->
-    <div class="app-layout">
-      <!-- Left: Editor -->
-      <aside class="editor-panel">
-        <div class="editor-content">
-          <div class="editor-header">
-            <h1>Resume Builder</h1>
-            <p>Create a clean, ATS-friendly resume in real time.</p>
-
-            <div class="stats-row">
-              <div class="stat-item">
-                <span class="stat-value" id="sectionCount">0</span>
-                <span class="stat-label">Sections</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value" id="fieldProgress">0%</span>
-                <span class="stat-label">Completed</span>
-              </div>
+                </div>
             </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Template</label>
-            <select id="templateSelect" class="form-select"></select>
-          </div>
-
-          <nav id="sectionNav" class="section-nav"></nav>
-
-          <form id="resumeForm" class="resume-form"></form>
         </div>
-      </aside>
+    </header>
+    <!-- main content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 gap-6">
+            <div class="lg:col-span-6 no-print">
+                <div class="bg-[#4a0404]/70 rounded-lg shadow-sm p-6">
 
-      <!-- Right: Preview -->
-      <main class="preview-panel">
-        <div class="preview-toolbar">
-          <span class="preview-label">Live Preview</span>
+                    <!-- Section 1: Personal Information -->
+                    <div id="section-0" class="form-section">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Personal Information</h2>
 
-          <div class="view-toggle">
-            <button class="toggle-btn" data-preview-bg="plain">
-              Plain
-            </button>
-            <button class="toggle-btn" data-preview-bg="grid">
-              Grid
-            </button>
-          </div>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">Full Name *</label>
+                                    <input type="text" id="fullName"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="John Doe" onchange="updatePreview()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">Email *</label>
+                                    <input type="email" id="email"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="john@example.com" onchange="updatePreview()">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">Phone</label>
+                                    <input type="tel" id="phone"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="+1 234 567 8900" onchange="updatePreview()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">Location</label>
+                                    <input type="text" id="location"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="New York, NY" onchange="updatePreview()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">LinkedIn</label>
+                                    <input type="text" id="linkedin"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="linkedin.com/in/username" onchange="updatePreview()">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-100 mb-1">GitHub</label>
+                                    <input type="text" id="github"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="github.com/username" onchange="updatePreview()">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-gray-100 mb-1">Portfolio/Website</label>
+                                    <input type="text" id="website"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                        placeholder="www.myportfolio.com" onchange="updatePreview()">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Professional Summary</label>
+                                <textarea id="summary" rows="4"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Brief overview of your professional background, key skills, and career objectives..."
+                                    onchange="updatePreview()"></textarea>
+                                <p class="text-xs text-gray-100 mt-1">2-3 sentences recommended</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="navigateToSection(1)"
+                                class="px-6 py-2 bg-red-400 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Education →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Education -->
+                    <div id="section-1" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Education</h2>
+
+                        <div id="educationEntries"></div>
+
+                        <button onclick="addEducationEntry()"
+                            class="mt-4 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition">
+                            + Add Education
+                        </button>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(0)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="navigateToSection(2)"
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Publications →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Publications -->
+                    <div id="section-2" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Publications</h2>
+                        <p class="text-sm text-gray-100 mb-4">Add research papers, articles, or publications</p>
+
+                        <div id="publicationEntries"></div>
+
+                        <button onclick="addPublicationEntry()"
+                            class="mt-4 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition">
+                            + Add Publication
+                        </button>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(1)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="navigateToSection(3)"
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Experience →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Experience -->
+                    <div id="section-3" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Research & Experience</h2>
+
+                        <div id="experienceEntries"></div>
+
+                        <button onclick="addExperienceEntry()"
+                            class="mt-4 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-100 rounded-lg transition">
+                            + Add Experience
+                        </button>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(2)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-100 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="navigateToSection(4)"
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Skills →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 5: Skills -->
+                    <div id="section-4" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Technical Skills</h2>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Programming
+                                    Languages</label>
+                                <input type="text" id="skillsProgramming"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Python, JavaScript, Java (comma separated)" onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Web Technologies &
+                                    Frameworks</label>
+                                <input type="text" id="skillsWeb"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="React, Node.js, Django (comma separated)" onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Databases & Cloud</label>
+                                <input type="text" id="skillsDatabase"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="MongoDB, PostgreSQL, AWS (comma separated)" onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Tools & Technologies</label>
+                                <input type="text" id="skillsTools"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Git, Docker, Kubernetes (comma separated)" onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Other Skills</label>
+                                <input type="text" id="skillsOther"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Machine Learning, Data Analysis (comma separated)"
+                                    onchange="updatePreview()">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(3)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="navigateToSection(5)"
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Projects →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 6: Projects -->
+                    <div id="section-5" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Projects</h2>
+
+                        <div id="projectEntries"></div>
+
+                        <button onclick="addProjectEntry()"
+                            class="mt-4 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition">
+                            + Add Project
+                        </button>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(4)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="navigateToSection(6)"
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                Next: Additional →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 7: Additional Sections -->
+                    <div id="section-6" class="form-section hidden">
+                        <h2 class="text-xl font-bold text-gray-100 mb-4">Additional Information</h2>
+
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Talks &
+                                    Presentations</label>
+                                <textarea id="talks" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Conference talks, presentations (one per line)"
+                                    onchange="updatePreview()"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Leadership & Extracurricular
+                                    Activities</label>
+                                <textarea id="leadership" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Leadership roles, volunteer work (one per line)"
+                                    onchange="updatePreview()"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Relevant Coursework</label>
+                                <input type="text" id="coursework"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Data Structures, Algorithms, Machine Learning (comma separated)"
+                                    onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Languages</label>
+                                <input type="text" id="languages"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="English (Native), Spanish (Fluent) (comma separated)"
+                                    onchange="updatePreview()">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-100 mb-1">Certifications</label>
+                                <textarea id="certifications" rows="2"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Professional certifications (one per line)"
+                                    onchange="updatePreview()"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="navigateToSection(5)"
+                                class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                                ← Previous
+                            </button>
+                            <button onclick="calculateATSScore()"
+                                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                                ✓ Complete & Calculate ATS Score
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="lg:col-span-4">
+                <!-- ATS Score Card -->
+                <div id="atsScoreCard" class="bg-white rounded-lg shadow-sm p-6 mb-6 no-print hidden">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">ATS Compatibility Score</h3>
+
+                    <!-- Score Gauge -->
+                    <div class="flex flex-col items-center mb-6">
+                        <div class="relative w-40 h-40">
+                            <svg class="transform -rotate-90 w-40 h-40">
+                                <circle cx="80" cy="80" r="70" stroke="#e5e7eb" stroke-width="12" fill="none" />
+                                <circle id="scoreCircle" cx="80" cy="80" r="70" stroke="#10b981" stroke-width="12"
+                                    fill="none" stroke-dasharray="440" stroke-dashoffset="440"
+                                    class="transition-all duration-1000" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="atsScore" class="text-4xl font-bold text-gray-900">0</span>
+                                <span class="text-sm text-gray-600">/ 100</span>
+                            </div>
+                        </div>
+                        <p id="scoreLabel" class="text-lg font-semibold mt-3 text-gray-700">Not Calculated</p>
+                    </div>
+
+                    <!-- Score Breakdown -->
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-700">Keyword Optimization</span>
+                                <span id="score-keywords" class="font-semibold">0/20</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="bar-keywords" class="bg-blue-600 h-2 rounded-full transition-all"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-700">Formatting & Structure</span>
+                                <span id="score-formatting" class="font-semibold">0/20</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="bar-formatting" class="bg-purple-600 h-2 rounded-full transition-all"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-700">Content Completeness</span>
+                                <span id="score-completeness" class="font-semibold">0/20</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="bar-completeness" class="bg-green-600 h-2 rounded-full transition-all"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-700">Readability</span>
+                                <span id="score-readability" class="font-semibold">0/20</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="bar-readability" class="bg-yellow-600 h-2 rounded-full transition-all"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-700">Technical Compliance</span>
+                                <span id="score-compliance" class="font-semibold">0/20</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="bar-compliance" class="bg-indigo-600 h-2 rounded-full transition-all"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggestions -->
+                    <div id="suggestions" class="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">💡 Suggestions</h4>
+                        <ul id="suggestionList" class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Resume Preview -->
+                <div class="bg-white rounded-lg shadow-lg sticky top-4">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center no-print">
+                        <h3 class="font-semibold text-gray-900">Resume Preview</h3>
+                        <!-- <select id="templateSelector" onchange="updatePreview()"
+                            class="px-3 py-1 border border-gray-300 rounded text-sm">
+                            <option value="modern">Modern</option>
+                            <option value="classic">Classic</option>
+                            <option value="minimal">Minimal</option>
+                        </select> -->
+                    </div>
+
+                    <div id="resumePreview" class="resume-preview p-8 bg-white"
+                        style="min-height: 800px; font-size: 11px; line-height: 1.4;">
+                        <div class="text-center text-gray-400 py-20">
+                            Start filling the form to see your resume preview
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="preview-stage">
-          <article id="resumePreview" class="resume-preview">
-            <!-- Rendered resume -->
-          </article>
-        </div>
-
-        <div class="preview-footer">
-          A4 layout · Scaled preview
-        </div>
-      </main>
     </div>
 
-    <!-- ATS Modal -->
-    <div id="atsModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>ATS Score</h2>
-          <button id="closeModal" class="btn-close">&times;</button>
-        </div>
+    <!-- script -->
+    <script>
+        // Global state
+        let currentSection = 0;
+        let educationCount = 0;
+        let publicationCount = 0;
+        let experienceCount = 0;
+        let projectCount = 0;
 
-        <div class="modal-body">
-          <div class="score-circle-container">
-            <svg
-              class="score-circle"
-              width="120"
-              height="120"
-              viewBox="0 0 120 120"
-            >
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                class="circle-bg"
-                fill="none"
-                stroke-width="12"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                class="circle-progress"
-                fill="none"
-                stroke-width="12"
-                stroke-dasharray="339.292"
-                stroke-dashoffset="339.292"
-              />
-              <text
-                x="60"
-                y="65"
-                text-anchor="middle"
-                class="score-text"
-                id="modalScoreDisplay"
-              >
-                0
-              </text>
-            </svg>
-          </div>
+        // Initialize
+        // Initialize
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            // Try to load saved data first
+            const dataLoaded = loadFromLocalStorage();
 
-          <div id="atsFeedback" class="feedback-list"></div>
-        </div>
-      </div>
-    </div>
+            // Only add empty entries if no data was loaded
+            if (!dataLoaded) {
+                addEducationEntry();
+                addExperienceEntry();
+                addProjectEntry();
+            }
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="app.js"></script>
-  </body>
+            // Set up auto-save for dynamic entries
+            setupAutoSaveForDynamicEntries();
+
+            updatePreview();
+        });
+
+        // Navigation
+        function navigateToSection(sectionIndex) {
+            // Hide all sections
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // Show target section
+            document.getElementById(`section-${sectionIndex}`).classList.remove('hidden');
+
+            // Update navigation buttons
+            document.querySelectorAll('.progress-step').forEach((btn, idx) => {
+                if (idx === sectionIndex) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-700');
+                    btn.classList.add('active', 'text-white');
+                } else {
+                    btn.classList.remove('active', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            });
+
+            currentSection = sectionIndex;
+            updateProgress();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Progress tracking
+        function updateProgress() {
+            const sections = 7;
+            const progress = ((currentSection + 1) / sections) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+        }
+
+        // Clear all saved data
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear all saved data?')) {
+                localStorage.removeItem('resumeBuddyData');
+                location.reload(); // Refresh to show empty form
+            }
+        }
+
+        // Dynamic form entries
+        function addEducationEntry() {
+            educationCount++;
+            const container = document.getElementById('educationEntries');
+            const entry = document.createElement('div');
+            entry.className = 'mb-6 p-4 border border-gray-200 rounded-lg';
+            entry.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-100">Education #${educationCount}</h4>
+                    <button onclick="this.parentElement.parentElement.remove(); updatePreview();" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Institution *</label>
+                        <input type="text" class="edu-institution w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="University Name" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Degree *</label>
+                        <input type="text" class="edu-degree w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Bachelor of Science" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Field of Study</label>
+                        <input type="text" class="edu-field w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Computer Science" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Start Date</label>
+                        <input type="month" class="edu-start w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">End Date</label>
+                        <input type="month" class="edu-end w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">GPA / Percentage</label>
+                        <input type="text" class="edu-gpa w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="3.8/4.0 or 85%" onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Location</label>
+                        <input type="text" class="edu-location w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="City, State" onchange="updatePreview()">
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function addPublicationEntry() {
+            publicationCount++;
+            const container = document.getElementById('publicationEntries');
+            const entry = document.createElement('div');
+            entry.className = 'mb-6 p-4 border border-gray-200 rounded-lg';
+            entry.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-100">Publication #${publicationCount}</h4>
+                    <button onclick="this.parentElement.parentElement.remove(); updatePreview();" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Authors *</label>
+                        <input type="text" class="pub-authors w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Smith, J., Doe, J." onchange="updatePreview()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Title *</label>
+                        <input type="text" class="pub-title w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Paper Title" onchange="updatePreview()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Journal/Conference</label>
+                            <input type="text" class="pub-journal w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Journal Name" onchange="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Year</label>
+                            <input type="number" class="pub-year w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="2024" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">DOI / Link</label>
+                        <input type="text" class="pub-doi w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://doi.org/..." onchange="updatePreview()">
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function addExperienceEntry() {
+            experienceCount++;
+            const container = document.getElementById('experienceEntries');
+            const entry = document.createElement('div');
+            entry.className = 'mb-6 p-4 border border-gray-200 rounded-lg';
+            entry.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-100">Experience #${experienceCount}</h4>
+                    <button onclick="this.parentElement.parentElement.remove(); updatePreview();" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                </div>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Job Title / Role *</label>
+                            <input type="text" class="exp-title w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Software Engineer Intern" onchange="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Company / Organization *</label>
+                            <input type="text" class="exp-company w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Company Name" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Start Date</label>
+                            <input type="month" class="exp-start w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">End Date</label>
+                            <input type="month" class="exp-end w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Location</label>
+                            <input type="text" class="exp-location w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="City, State" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Description & Achievements (one per line)</label>
+                        <textarea rows="4" class="exp-description w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="• Developed feature that improved performance by 40%
+• Collaborated with team of 5 engineers
+• Implemented automated testing" onchange="updatePreview()"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">Use bullet points (•) or start with action verbs</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function addProjectEntry() {
+            projectCount++;
+            const container = document.getElementById('projectEntries');
+            const entry = document.createElement('div');
+            entry.className = 'mb-6 p-4 border border-gray-200 rounded-lg';
+            entry.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-100">Project #${projectCount}</h4>
+                    <button onclick="this.parentElement.parentElement.remove(); updatePreview();" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Project Name *</label>
+                        <input type="text" class="proj-name w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="E-Commerce Platform" onchange="updatePreview()">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">Technologies Used</label>
+                            <input type="text" class="proj-tech w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="React, Node.js, MongoDB" onchange="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100 mb-1">GitHub / Live Link</label>
+                            <input type="text" class="proj-link w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="github.com/username/project" onchange="updatePreview()">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100 mb-1">Description (one per line)</label>
+                        <textarea rows="3" class="proj-description w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="• Built full-stack web application
+• Implemented user authentication
+• Deployed on AWS" onchange="updatePreview()"></textarea>
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        // Preview generation
+        function updatePreview() {
+            const data = collectFormData();
+            document.getElementById('resumePreview').innerHTML = generateModernTemplate(data);
+            saveToLocalStorage();
+        }
+
+        function collectFormData() {
+            const data = {
+                personal: {
+                    name: document.getElementById('fullName')?.value || '',
+                    email: document.getElementById('email')?.value || '',
+                    phone: document.getElementById('phone')?.value || '',
+                    location: document.getElementById('location')?.value || '',
+                    linkedin: document.getElementById('linkedin')?.value || '',
+                    github: document.getElementById('github')?.value || '',
+                    website: document.getElementById('website')?.value || '',
+                    summary: document.getElementById('summary')?.value || ''
+                },
+                education: [],
+                publications: [],
+                experience: [],
+                skills: {
+                    programming: document.getElementById('skillsProgramming')?.value || '',
+                    web: document.getElementById('skillsWeb')?.value || '',
+                    database: document.getElementById('skillsDatabase')?.value || '',
+                    tools: document.getElementById('skillsTools')?.value || '',
+                    other: document.getElementById('skillsOther')?.value || ''
+                },
+                projects: [],
+                additional: {
+                    talks: document.getElementById('talks')?.value || '',
+                    leadership: document.getElementById('leadership')?.value || '',
+                    coursework: document.getElementById('coursework')?.value || '',
+                    languages: document.getElementById('languages')?.value || '',
+                    certifications: document.getElementById('certifications')?.value || ''
+                }
+            };
+
+            // Collect education entries
+            document.querySelectorAll('#educationEntries > div').forEach(entry => {
+                const edu = {
+                    institution: entry.querySelector('.edu-institution')?.value || '',
+                    degree: entry.querySelector('.edu-degree')?.value || '',
+                    field: entry.querySelector('.edu-field')?.value || '',
+                    start: entry.querySelector('.edu-start')?.value || '',
+                    end: entry.querySelector('.edu-end')?.value || '',
+                    gpa: entry.querySelector('.edu-gpa')?.value || '',
+                    location: entry.querySelector('.edu-location')?.value || ''
+                };
+                if (edu.institution || edu.degree) {
+                    data.education.push(edu);
+                }
+            });
+
+            // Collect publications
+            document.querySelectorAll('#publicationEntries > div').forEach(entry => {
+                const pub = {
+                    authors: entry.querySelector('.pub-authors')?.value || '',
+                    title: entry.querySelector('.pub-title')?.value || '',
+                    journal: entry.querySelector('.pub-journal')?.value || '',
+                    year: entry.querySelector('.pub-year')?.value || '',
+                    doi: entry.querySelector('.pub-doi')?.value || ''
+                };
+                if (pub.title) {
+                    data.publications.push(pub);
+                }
+            });
+
+            // Collect experience
+            document.querySelectorAll('#experienceEntries > div').forEach(entry => {
+                const exp = {
+                    title: entry.querySelector('.exp-title')?.value || '',
+                    company: entry.querySelector('.exp-company')?.value || '',
+                    start: entry.querySelector('.exp-start')?.value || '',
+                    end: entry.querySelector('.exp-end')?.value || '',
+                    location: entry.querySelector('.exp-location')?.value || '',
+                    description: entry.querySelector('.exp-description')?.value || ''
+                };
+                if (exp.title || exp.company) {
+                    data.experience.push(exp);
+                }
+            });
+
+            // Collect projects
+            document.querySelectorAll('#projectEntries > div').forEach(entry => {
+                const proj = {
+                    name: entry.querySelector('.proj-name')?.value || '',
+                    tech: entry.querySelector('.proj-tech')?.value || '',
+                    link: entry.querySelector('.proj-link')?.value || '',
+                    description: entry.querySelector('.proj-description')?.value || ''
+                };
+                if (proj.name) {
+                    data.projects.push(proj);
+                }
+            });
+
+            return data;
+        }
+
+        function saveToLocalStorage() {
+            const data = collectFormData();
+            localStorage.setItem('resumeBuddyData', JSON.stringify(data));
+            console.log('Auto-saved to localStorage');
+        }
+
+        // Load form data from localStorage
+        // Load form data from localStorage
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('resumeBuddyData');
+            if (!savedData) {
+                console.log('No saved data found');
+                return false;
+            }
+
+            try {
+                const data = JSON.parse(savedData);
+
+                // Load personal info
+                document.getElementById('fullName').value = data.personal.name || '';
+                document.getElementById('email').value = data.personal.email || '';
+                document.getElementById('phone').value = data.personal.phone || '';
+                document.getElementById('location').value = data.personal.location || '';
+                document.getElementById('linkedin').value = data.personal.linkedin || '';
+                document.getElementById('github').value = data.personal.github || '';
+                document.getElementById('website').value = data.personal.website || '';
+                document.getElementById('summary').value = data.personal.summary || '';
+
+                // Load skills
+                document.getElementById('skillsProgramming').value = data.skills.programming || '';
+                document.getElementById('skillsWeb').value = data.skills.web || '';
+                document.getElementById('skillsDatabase').value = data.skills.database || '';
+                document.getElementById('skillsTools').value = data.skills.tools || '';
+                document.getElementById('skillsOther').value = data.skills.other || '';
+
+                // Load additional info
+                document.getElementById('talks').value = data.additional.talks || '';
+                document.getElementById('leadership').value = data.additional.leadership || '';
+                document.getElementById('coursework').value = data.additional.coursework || '';
+                document.getElementById('languages').value = data.additional.languages || '';
+                document.getElementById('certifications').value = data.additional.certifications || '';
+
+                // Load dynamic entries
+                // Clear existing entries first
+                document.getElementById('educationEntries').innerHTML = '';
+                document.getElementById('publicationEntries').innerHTML = '';
+                document.getElementById('experienceEntries').innerHTML = '';
+                document.getElementById('projectEntries').innerHTML = '';
+
+                // Reset counters
+                educationCount = 0;
+                publicationCount = 0;
+                experienceCount = 0;
+                projectCount = 0;
+
+                // Load education entries
+                if (data.education && data.education.length > 0) {
+                    data.education.forEach((edu) => {
+                        addEducationEntry();
+                        const entries = document.querySelectorAll('#educationEntries > div');
+                        const lastEntry = entries[entries.length - 1];
+                        if (lastEntry) {
+                            lastEntry.querySelector('.edu-institution').value = edu.institution || '';
+                            lastEntry.querySelector('.edu-degree').value = edu.degree || '';
+                            lastEntry.querySelector('.edu-field').value = edu.field || '';
+                            lastEntry.querySelector('.edu-start').value = edu.start || '';
+                            lastEntry.querySelector('.edu-end').value = edu.end || '';
+                            lastEntry.querySelector('.edu-gpa').value = edu.gpa || '';
+                            lastEntry.querySelector('.edu-location').value = edu.location || '';
+                        }
+                    });
+                }
+
+                // Load publication entries
+                if (data.publications && data.publications.length > 0) {
+                    data.publications.forEach((pub) => {
+                        addPublicationEntry();
+                        const entries = document.querySelectorAll('#publicationEntries > div');
+                        const lastEntry = entries[entries.length - 1];
+                        if (lastEntry) {
+                            lastEntry.querySelector('.pub-authors').value = pub.authors || '';
+                            lastEntry.querySelector('.pub-title').value = pub.title || '';
+                            lastEntry.querySelector('.pub-journal').value = pub.journal || '';
+                            lastEntry.querySelector('.pub-year').value = pub.year || '';
+                            lastEntry.querySelector('.pub-doi').value = pub.doi || '';
+                        }
+                    });
+                }
+
+                // Load experience entries
+                if (data.experience && data.experience.length > 0) {
+                    data.experience.forEach((exp) => {
+                        addExperienceEntry();
+                        const entries = document.querySelectorAll('#experienceEntries > div');
+                        const lastEntry = entries[entries.length - 1];
+                        if (lastEntry) {
+                            lastEntry.querySelector('.exp-title').value = exp.title || '';
+                            lastEntry.querySelector('.exp-company').value = exp.company || '';
+                            lastEntry.querySelector('.exp-start').value = exp.start || '';
+                            lastEntry.querySelector('.exp-end').value = exp.end || '';
+                            lastEntry.querySelector('.exp-location').value = exp.location || '';
+                            lastEntry.querySelector('.exp-description').value = exp.description || '';
+                        }
+                    });
+                }
+
+                // Load project entries
+                if (data.projects && data.projects.length > 0) {
+                    data.projects.forEach((proj) => {
+                        addProjectEntry();
+                        const entries = document.querySelectorAll('#projectEntries > div');
+                        const lastEntry = entries[entries.length - 1];
+                        if (lastEntry) {
+                            lastEntry.querySelector('.proj-name').value = proj.name || '';
+                            lastEntry.querySelector('.proj-tech').value = proj.tech || '';
+                            lastEntry.querySelector('.proj-link').value = proj.link || '';
+                            lastEntry.querySelector('.proj-description').value = proj.description || '';
+                        }
+                    });
+                }
+
+                console.log('Data loaded from localStorage');
+                return true;
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+                return false;
+            }
+        }
+
+        // Set up auto-save for dynamic entries
+        function setupAutoSaveForDynamicEntries() {
+            // Add input event listeners to all dynamic inputs
+            const observer = new MutationObserver(() => {
+                // When dynamic content changes, add event listeners to new inputs
+                document.querySelectorAll('#educationEntries input, #educationEntries textarea').forEach(el => {
+                    if (!el.hasAttribute('data-autosave-added')) {
+                        el.addEventListener('input', saveToLocalStorage);
+                        el.setAttribute('data-autosave-added', 'true');
+                    }
+                });
+                document.querySelectorAll('#publicationEntries input, #publicationEntries textarea').forEach(el => {
+                    if (!el.hasAttribute('data-autosave-added')) {
+                        el.addEventListener('input', saveToLocalStorage);
+                        el.setAttribute('data-autosave-added', 'true');
+                    }
+                });
+                document.querySelectorAll('#experienceEntries input, #experienceEntries textarea').forEach(el => {
+                    if (!el.hasAttribute('data-autosave-added')) {
+                        el.addEventListener('input', saveToLocalStorage);
+                        el.setAttribute('data-autosave-added', 'true');
+                    }
+                });
+                document.querySelectorAll('#projectEntries input, #projectEntries textarea').forEach(el => {
+                    if (!el.hasAttribute('data-autosave-added')) {
+                        el.addEventListener('input', saveToLocalStorage);
+                        el.setAttribute('data-autosave-added', 'true');
+                    }
+                });
+            });
+
+            // Observe all dynamic entry containers
+            observer.observe(document.getElementById('educationEntries'), { childList: true, subtree: true });
+            observer.observe(document.getElementById('publicationEntries'), { childList: true, subtree: true });
+            observer.observe(document.getElementById('experienceEntries'), { childList: true, subtree: true });
+            observer.observe(document.getElementById('projectEntries'), { childList: true, subtree: true });
+        }
+
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr + '-01');
+            return date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+        }
+
+        function generateModernTemplate(data) {
+            let html = '<div class="max-w-4xl mx-auto">';
+
+            // Header
+            if (data.personal.name) {
+                html += `
+                    <div class="text-center mb-6 pb-4 border-b-2 border-blue-600">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">${data.personal.name}</h1>
+                        <div class="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
+                            ${data.personal.email ? `<span>${data.personal.email}</span>` : ''}
+                            ${data.personal.phone ? `<span>${data.personal.phone}</span>` : ''}
+                            ${data.personal.location ? `<span>${data.personal.location}</span>` : ''}
+                            ${data.personal.linkedin ? `<span>${data.personal.linkedin}</span>` : ''}
+                            ${data.personal.github ? `<span>${data.personal.github}</span>` : ''}
+                            ${data.personal.website ? `<span>${data.personal.website}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Summary
+            if (data.personal.summary) {
+                html += `
+                    <div class="mb-5">
+                        <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Professional Summary</h2>
+                        <p class="text-xs text-gray-700 leading-relaxed">${data.personal.summary}</p>
+                    </div>
+                `;
+            }
+
+            // Education
+            if (data.education.length > 0) {
+                html += `<div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Education</h2>`;
+                data.education.forEach(edu => {
+                    // Check if it's GPA or Percentage
+                    let gpaDisplay = '';
+                    if (edu.gpa) {
+                        // Remove any trailing % sign and convert to number
+                        const gpaValue = parseFloat(edu.gpa.replace('%', ''));
+                        if (!isNaN(gpaValue)) {
+                            if (gpaValue <= 10) {
+                                gpaDisplay = `<p class="text-xs text-gray-600">GPA: ${edu.gpa}</p>`;
+                            } else {
+                                gpaDisplay = `<p class="text-xs text-gray-600">Percentage: ${edu.gpa}</p>`;
+                            }
+                        } else {
+                            // If not a number, just display as is
+                            gpaDisplay = `<p class="text-xs text-gray-600">${edu.gpa}</p>`;
+                        }
+                    }
+
+                    html += `
+                        <div class="mb-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-xs font-bold text-gray-900">${edu.institution}</h3>
+                                    <p class="text-xs text-gray-700">${edu.degree}${edu.field ? ` in ${edu.field}` : ''}</p>
+                                    ${gpaDisplay}
+                                </div>
+                                <div class="text-right text-xs text-gray-600">
+                                    ${edu.start ? formatDate(edu.start) : ''} ${edu.start && edu.end ? '–' : ''} ${edu.end ? formatDate(edu.end) : ''}
+                                    ${edu.location ? `<br>${edu.location}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Publications
+            if (data.publications.length > 0) {
+                html += `<div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Publications</h2>`;
+                data.publications.forEach(pub => {
+                    html += `
+                        <div class="mb-2">
+                            <p class="text-xs text-gray-700">
+                                ${pub.authors ? `${pub.authors}. ` : ''}
+                                <span class="font-semibold">"${pub.title}"</span>
+                                ${pub.journal ? `. <em>${pub.journal}</em>` : ''}
+                                ${pub.year ? `, ${pub.year}` : ''}
+                                ${pub.doi ? `. <a href="${pub.doi}" class="text-blue-600">${pub.doi}</a>` : ''}
+                            </p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Experience
+            if (data.experience.length > 0) {
+                html += `<div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Professional Experience</h2>`;
+                data.experience.forEach(exp => {
+                    html += `
+                        <div class="mb-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-xs font-bold text-gray-900">${exp.title}</h3>
+                                    <p class="text-xs text-gray-700 italic">${exp.company}</p>
+                                </div>
+                                <div class="text-right text-xs text-gray-600">
+                                    ${exp.start ? formatDate(exp.start) : ''} ${exp.start && exp.end ? '–' : ''} ${exp.end ? formatDate(exp.end) : 'Present'}
+                                    ${exp.location ? `<br>${exp.location}` : ''}
+                                </div>
+                            </div>
+                            ${exp.description ? `<div class="mt-1 text-xs text-gray-700">${formatBulletPoints(exp.description)}</div>` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Skills
+            const hasSkills = data.skills.programming || data.skills.web || data.skills.database || data.skills.tools || data.skills.other;
+            if (hasSkills) {
+                html += `<div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Technical Skills</h2>
+                    <div class="grid grid-cols-1 gap-1">`;
+                if (data.skills.programming) {
+                    html += `<p class="text-xs"><span class="font-semibold">Programming:</span> ${data.skills.programming}</p>`;
+                }
+                if (data.skills.web) {
+                    html += `<p class="text-xs"><span class="font-semibold">Web Technologies:</span> ${data.skills.web}</p>`;
+                }
+                if (data.skills.database) {
+                    html += `<p class="text-xs"><span class="font-semibold">Databases & Cloud:</span> ${data.skills.database}</p>`;
+                }
+                if (data.skills.tools) {
+                    html += `<p class="text-xs"><span class="font-semibold">Tools:</span> ${data.skills.tools}</p>`;
+                }
+                if (data.skills.other) {
+                    html += `<p class="text-xs"><span class="font-semibold">Other:</span> ${data.skills.other}</p>`;
+                }
+                html += `</div></div>`;
+            }
+
+            // Projects
+            if (data.projects.length > 0) {
+                html += `<div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Projects</h2>`;
+                data.projects.forEach(proj => {
+                    html += `
+                        <div class="mb-3">
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-xs font-bold text-gray-900">${proj.name}</h3>
+                                ${proj.link ? `<a href="${proj.link}" class="text-xs text-blue-600">${proj.link}</a>` : ''}
+                            </div>
+                            ${proj.tech ? `<p class="text-xs text-gray-600 italic">${proj.tech}</p>` : ''}
+                            ${proj.description ? `<div class="mt-1 text-xs text-gray-700">${formatBulletPoints(proj.description)}</div>` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Additional sections
+            if (data.additional.talks) {
+                html += `<div class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Talks & Presentations</h2>
+                    <div class="text-xs text-gray-700">${formatBulletPoints(data.additional.talks)}</div>
+                </div>`;
+            }
+
+            if (data.additional.leadership) {
+                html += `<div class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Leadership & Activities</h2>
+                    <div class="text-xs text-gray-700">${formatBulletPoints(data.additional.leadership)}</div>
+                </div>`;
+            }
+
+            if (data.additional.coursework) {
+                html += `<div class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Relevant Coursework</h2>
+                    <p class="text-xs text-gray-700">${data.additional.coursework}</p>
+                </div>`;
+            }
+
+            if (data.additional.certifications) {
+                html += `<div class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Certifications</h2>
+                    <div class="text-xs text-gray-700">${formatBulletPoints(data.additional.certifications)}</div>
+                </div>`;
+            }
+
+            if (data.additional.languages) {
+                html += `<div class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">Languages</h2>
+                    <p class="text-xs text-gray-700">${data.additional.languages}</p>
+                </div>`;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function formatBulletPoints(text) {
+            if (!text) return '';
+            const lines = text.split('\n').filter(line => line.trim());
+            return '<ul class="list-disc list-inside space-y-1">' +
+                lines.map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('') +
+                '</ul>';
+        }
+
+        // ATS Scoring System
+        function calculateATSScore() {
+            const data = collectFormData();
+            let scores = {
+                keywords: 0,
+                formatting: 0,
+                completeness: 0,
+                readability: 0,
+                compliance: 0
+            };
+            let suggestions = [];
+
+            // 1. Keyword Optimization (20 points)
+            const allText = JSON.stringify(data).toLowerCase();
+            const keywords = ['developed', 'implemented', 'managed', 'led', 'created', 'designed', 'improved', 'increased', 'reduced', 'achieved'];
+            const keywordCount = keywords.filter(kw => allText.includes(kw)).length;
+            scores.keywords = Math.min(20, keywordCount * 2);
+
+            const skillCount = [data.skills.programming, data.skills.web, data.skills.database, data.skills.tools, data.skills.other]
+                .filter(s => s).join(',').split(',').filter(s => s.trim()).length;
+            scores.keywords = Math.min(20, scores.keywords + skillCount);
+
+            if (scores.keywords < 15) {
+                suggestions.push('Add more action verbs and technical skills');
+            }
+
+            // 2. Formatting & Structure (20 points)
+            scores.formatting = 20; // Base score for clean HTML structure
+            if (!data.personal.name) scores.formatting -= 5;
+            if (data.education.length === 0) scores.formatting -= 3;
+            if (data.experience.length === 0) scores.formatting -= 5;
+            if (data.projects.length === 0) scores.formatting -= 2;
+
+            if (scores.formatting < 18) {
+                suggestions.push('Complete all major sections (Education, Experience)');
+            }
+
+            // 3. Content Completeness (20 points)
+            let contentScore = 0;
+            if (data.personal.name && data.personal.email) contentScore += 5;
+            if (data.personal.phone) contentScore += 2;
+            if (data.personal.location) contentScore += 1;
+            if (data.personal.summary) contentScore += 3;
+            if (data.education.length > 0) contentScore += 3;
+            if (data.experience.length > 0) contentScore += 4;
+            if (skillCount > 5) contentScore += 2;
+
+            scores.completeness = contentScore;
+
+            if (!data.personal.summary) {
+                suggestions.push('Add a professional summary');
+            }
+            if (data.experience.length === 0) {
+                suggestions.push('Add work experience or internships');
+            }
+
+            // 4. Readability (20 points)
+            let readabilityScore = 0;
+
+            // Check for bullet points in experience
+            data.experience.forEach(exp => {
+                if (exp.description && (exp.description.includes('•') || exp.description.includes('\n'))) {
+                    readabilityScore += 3;
+                }
+            });
+
+            // Check for metrics/numbers
+            if (/\d+%|\d+x|increased|reduced|improved/i.test(allText)) {
+                readabilityScore += 5;
+            }
+
+            // Check length
+            const totalLength = allText.length;
+            if (totalLength > 500 && totalLength < 4000) {
+                readabilityScore += 5;
+            }
+
+            // Action verbs
+            const actionVerbCount = keywords.filter(kw => allText.includes(kw)).length;
+            readabilityScore += Math.min(7, actionVerbCount);
+
+            scores.readability = Math.min(20, readabilityScore);
+
+            if (scores.readability < 15) {
+                suggestions.push('Use more bullet points and quantify achievements');
+            }
+
+            // 5. Technical Compliance (20 points)
+            scores.compliance = 20; // HTML format is ATS-friendly
+            if (!data.personal.email || !data.personal.name) {
+                scores.compliance -= 5;
+            }
+
+            // Calculate total
+            const totalScore = scores.keywords + scores.formatting + scores.completeness + scores.readability + scores.compliance;
+
+            // Display results
+            displayATSScore(totalScore, scores, suggestions);
+
+            // Show the card and scroll to it
+            document.getElementById('atsScoreCard').classList.remove('hidden');
+            document.getElementById('atsScoreCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function displayATSScore(total, scores, suggestions) {
+            // Update total score
+            document.getElementById('atsScore').textContent = total;
+
+            // Update score label
+            const label = document.getElementById('scoreLabel');
+            if (total >= 80) {
+                label.textContent = 'Excellent!';
+                label.className = 'text-lg font-semibold mt-3 text-green-600';
+            } else if (total >= 60) {
+                label.textContent = 'Good';
+                label.className = 'text-lg font-semibold mt-3 text-yellow-600';
+            } else {
+                label.textContent = 'Needs Improvement';
+                label.className = 'text-lg font-semibold mt-3 text-red-600';
+            }
+
+            // Update circle
+            const circle = document.getElementById('scoreCircle');
+            const circumference = 440;
+            const offset = circumference - (total / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            if (total >= 80) {
+                circle.style.stroke = '#10b981';
+            } else if (total >= 60) {
+                circle.style.stroke = '#f59e0b';
+            } else {
+                circle.style.stroke = '#ef4444';
+            }
+
+            // Update breakdown
+            updateScoreBar('keywords', scores.keywords, 20);
+            updateScoreBar('formatting', scores.formatting, 20);
+            updateScoreBar('completeness', scores.completeness, 20);
+            updateScoreBar('readability', scores.readability, 20);
+            updateScoreBar('compliance', scores.compliance, 20);
+
+            // Update suggestions
+            const suggestionList = document.getElementById('suggestionList');
+            if (suggestions.length === 0) {
+                suggestionList.innerHTML = '<li>Your resume looks great! Ready to download.</li>';
+            } else {
+                suggestionList.innerHTML = suggestions.map(s => `<li>${s}</li>`).join('');
+            }
+        }
+
+        function updateScoreBar(category, score, max) {
+            document.getElementById(`score-${category}`).textContent = `${score}/${max}`;
+            document.getElementById(`bar-${category}`).style.width = `${(score / max) * 100}%`;
+        }
+
+        // Theme toggle
+        function togglePreviewTheme() {
+            const preview = document.getElementById('resumePreview');
+            if (previewTheme === 'light') {
+                preview.style.backgroundColor = '#1f2937';
+                preview.style.color = '#f3f4f6';
+                previewTheme = 'dark';
+                document.getElementById('themeIcon').textContent = '☀️';
+            } else {
+                preview.style.backgroundColor = '#ffffff';
+                preview.style.color = '#000000';
+                previewTheme = 'light';
+                document.getElementById('themeIcon').textContent = '🌙';
+            }
+        }
+
+        // PDF generation function   
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const data = collectFormData();
+
+            let yPos = 20;
+            const pageWidth = doc.internal.pageSize.width;
+            const margin = 25;
+            const maxWidth = pageWidth - 2 * margin;
+            const lineHeight = 5;
+            const sectionSpacing = 10;
+
+            // Set default font
+            doc.setFont("helvetica");
+            doc.setFontSize(10);
+
+            // Add subtle background color for header (light gray)
+            doc.setFillColor(248, 249, 250);
+            doc.rect(0, 0, pageWidth, 60, 'F');
+
+            // Header with centered name
+            doc.setFontSize(24);
+            doc.setFont("helvetica", "bold");
+            const name = data.personal.name || "Your Name";
+            const nameWidth = doc.getTextWidth(name);
+            doc.text(name, pageWidth / 2, 30, { align: 'center' });
+
+            // Contact information
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+
+            const contactItems = [
+                data.personal.email,
+                data.personal.phone,
+                data.personal.location,
+                data.personal.linkedin,
+                data.personal.github,
+                data.personal.website
+            ].filter(item => item && item.trim());
+
+            let contactX = pageWidth / 2;
+            let contactY = 40;
+
+            // Draw contact info with separators
+            const contactText = contactItems.join(" • ");
+            const contactWidth = doc.getTextWidth(contactText);
+
+            if (contactWidth < maxWidth) {
+                doc.text(contactText, pageWidth / 2, contactY, { align: 'center' });
+            } else {
+                // If too wide, split into two lines
+                const midIndex = Math.ceil(contactItems.length / 2);
+                const line1 = contactItems.slice(0, midIndex).join(" • ");
+                const line2 = contactItems.slice(midIndex).join(" • ");
+
+                doc.text(line1, pageWidth / 2, contactY - 3, { align: 'center' });
+                doc.text(line2, pageWidth / 2, contactY + 3, { align: 'center' });
+                contactY += 6;
+            }
+
+            yPos = Math.max(contactY, 45) + 15;
+
+            // Professional Summary
+            if (data.personal.summary) {
+                yPos = addSectionHeader(doc, "PROFESSIONAL SUMMARY", yPos, pageWidth, margin);
+                yPos += 3;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                const summaryLines = doc.splitTextToSize(data.personal.summary, maxWidth);
+                doc.text(summaryLines, margin, yPos);
+                yPos += summaryLines.length * lineHeight + sectionSpacing;
+            }
+
+            // Education
+            if (data.education.length > 0) {
+                yPos = checkPageBreak(doc, yPos, 40, margin);
+                yPos = addSectionHeader(doc, "EDUCATION", yPos, pageWidth, margin);
+                yPos += 3;
+
+                data.education.forEach((edu, index) => {
+                    if (index > 0) yPos += 8;
+                    yPos = checkPageBreak(doc, yPos, 25, margin);
+
+                    // Institution and dates on same line
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    const institution = edu.institution || '';
+                    doc.text(institution, margin, yPos);
+
+                    if (edu.start || edu.end) {
+                        const dateText = `${edu.start ? formatDate(edu.start) : ''} ${edu.start && edu.end ? '–' : ''} ${edu.end ? formatDate(edu.end) : ''}`;
+                        doc.setFont("helvetica", "normal");
+                        doc.text(dateText, pageWidth - margin, yPos, { align: 'right' });
+                    }
+
+                    yPos += 4;
+
+                    // Degree and field
+                    doc.setFont("helvetica", "normal");
+                    let degreeText = edu.degree || '';
+                    if (edu.field) degreeText += edu.degree ? ` in ${edu.field}` : edu.field;
+                    if (degreeText) {
+                        doc.text(degreeText, margin, yPos);
+                        yPos += 4;
+                    }
+
+                    // GPA and location
+                    let detailText = '';
+                    if (edu.gpa) detailText += `${edu.gpa}`;
+                    if (edu.location) detailText += detailText ? ` • ${edu.location}` : edu.location;
+
+                    if (detailText) {
+                        doc.setFont("helvetica", "italic");
+                        doc.text(detailText, margin, yPos);
+                        yPos += 4;
+                    }
+                });
+                yPos += 5;
+            }
+
+            // Publications
+            if (data.publications.length > 0) {
+                yPos = checkPageBreak(doc, yPos, 40, margin);
+                yPos = addSectionHeader(doc, "PUBLICATIONS", yPos, pageWidth, margin);
+                yPos += 3;
+
+                data.publications.forEach((pub, index) => {
+                    if (index > 0) yPos += 8;
+                    yPos = checkPageBreak(doc, yPos, 30, margin);
+
+                    // Authors
+                    if (pub.authors) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8);
+                        doc.text(pub.authors + ".", margin, yPos);
+                        yPos += 5;
+                    }
+
+                    // Title
+                    if (pub.title) {
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(9);
+                        const titleLines = doc.splitTextToSize(`${pub.title}`, maxWidth);
+                        doc.text(titleLines, margin, yPos);
+                        yPos += 4;
+                    }
+
+                    // Journal and year
+                    if (pub.journal || pub.year) {
+                        doc.setFont("helvetica", "italic");
+                        doc.setFontSize(8);
+                        let journalText = '';
+                        if (pub.journal) journalText += pub.journal;
+                        if (pub.year) journalText += (pub.journal ? ', ' : '') + pub.year;
+
+                        if (journalText) {
+                            doc.text(journalText, margin, yPos);
+                            yPos += 4;
+                        }
+                    }
+
+                    // DOI/Link
+                    if (pub.doi) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setTextColor(0, 0, 255);
+                        const doiLines = doc.splitTextToSize(pub.doi, maxWidth);
+                        doc.text(doiLines, margin, yPos);
+                        doc.setTextColor(0, 0, 0);
+                        yPos += doiLines.length * lineHeight;
+                    }
+                });
+                yPos += 5;
+            }
+
+            // Experience
+            if (data.experience.length > 0) {
+                yPos = checkPageBreak(doc, yPos, 40, margin);
+                yPos = addSectionHeader(doc, "PROFESSIONAL EXPERIENCE", yPos, pageWidth, margin);
+                yPos += 3;
+
+                data.experience.forEach((exp, index) => {
+                    if (index > 0) yPos += 8;
+                    yPos = checkPageBreak(doc, yPos, 35, margin);
+
+                    // Title and company
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    const title = exp.title || '';
+                    doc.text(title, margin, yPos);
+                    yPos += 4;
+
+                    // Company and dates
+                    doc.setFont("helvetica", "italic");
+                    doc.text(exp.company || '', margin, yPos);
+
+                    if (exp.start || exp.end) {
+                        const dateText = `${exp.start ? formatDate(exp.start) : ''} ${exp.start && exp.end ? '–' : ''} ${exp.end ? formatDate(exp.end) : 'Present'}`;
+                        doc.setFont("helvetica", "normal");
+                        doc.text(dateText, pageWidth - margin, yPos, { align: 'right' });
+                    }
+                    yPos += 4;
+
+                    // Location if exists
+                    if (exp.location) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8);
+                        doc.text(exp.location, margin, yPos);
+                        yPos += 4;
+                    }
+
+                    // Description
+                    if (exp.description) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8.5);
+                        const bullets = exp.description.split('\n').filter(b => b.trim());
+                        bullets.forEach(bullet => {
+                            const cleanBullet = bullet.replace(/^[•\-\*]\s*/, '');
+                            const bulletLines = doc.splitTextToSize('• ' + cleanBullet, maxWidth - 5);
+
+                            yPos = checkPageBreak(doc, yPos, bulletLines.length * lineHeight + 2, margin);
+                            doc.text(bulletLines, margin + 2, yPos);
+                            yPos += bulletLines.length * lineHeight;
+                        });
+                    }
+                });
+                yPos += 5;
+            }
+
+            // Skills
+            const hasSkills = data.skills.programming || data.skills.web || data.skills.database || data.skills.tools || data.skills.other;
+            if (hasSkills) {
+                yPos = checkPageBreak(doc, yPos, 40, margin);
+                yPos = addSectionHeader(doc, "TECHNICAL SKILLS", yPos, pageWidth, margin);
+                yPos += 3;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                let currentY = yPos;
+
+                const skillCategories = [
+                    { label: "Programming", value: data.skills.programming },
+                    { label: "Web Technologies", value: data.skills.web },
+                    { label: "Databases & Cloud", value: data.skills.database },
+                    { label: "Tools", value: data.skills.tools },
+                    { label: "Other", value: data.skills.other }
+                ].filter(cat => cat.value && cat.value.trim());
+
+                skillCategories.forEach((cat, index) => {
+                    const text = `${cat.label}: ${cat.value}`;
+                    const textWidth = doc.getTextWidth(text);
+
+                    // Check if we need a new line
+                    if (currentY === yPos && index > 0) {
+                        currentY = yPos;
+                    }
+
+                    // Check if text fits on current line
+                    if (margin + textWidth < pageWidth - margin - 10) {
+                        doc.text(text, margin, currentY);
+                        currentY += 4;
+                    } else {
+                        // Split into multiple lines
+                        const lines = doc.splitTextToSize(text, maxWidth);
+                        lines.forEach(line => {
+                            doc.text(line, margin, currentY);
+                            currentY += 4;
+                        });
+                    }
+                });
+
+                yPos = currentY + 5;
+            }
+
+            // Projects
+            if (data.projects.length > 0) {
+                yPos = checkPageBreak(doc, yPos, 40, margin);
+                yPos = addSectionHeader(doc, "PROJECTS", yPos, pageWidth, margin);
+                yPos += 3;
+
+                data.projects.forEach((proj, index) => {
+                    if (index > 0) yPos += 8;
+                    yPos = checkPageBreak(doc, yPos, 30, margin);
+
+                    // Project name and link
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.text(proj.name || '', margin, yPos);
+
+                    if (proj.link) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setTextColor(0, 0, 255);
+                        doc.setFontSize(8);
+                        const linkText = proj.link;
+                        doc.text(linkText, pageWidth - margin, yPos, { align: 'right' });
+                        doc.setTextColor(0, 0, 0);
+                    }
+                    yPos += 4;
+
+                    // Technologies
+                    if (proj.tech) {
+                        doc.setFont("helvetica", "italic");
+                        doc.setFontSize(8);
+                        doc.text(proj.tech, margin, yPos);
+                        yPos += 4;
+                    }
+
+                    // Description
+                    if (proj.description) {
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8.5);
+                        const bullets = proj.description.split('\n').filter(b => b.trim());
+                        bullets.forEach(bullet => {
+                            const cleanBullet = bullet.replace(/^[•\-\*]\s*/, '');
+                            const bulletLines = doc.splitTextToSize('• ' + cleanBullet, maxWidth - 5);
+
+                            yPos = checkPageBreak(doc, yPos, bulletLines.length * lineHeight + 2, margin);
+                            doc.text(bulletLines, margin + 2, yPos);
+                            yPos += bulletLines.length * lineHeight;
+                        });
+                    }
+                });
+                yPos += 5;
+            }
+
+            // Additional sections
+            const additionalSections = [
+                { title: "TALKS & PRESENTATIONS", content: data.additional.talks },
+                { title: "LEADERSHIP & ACTIVITIES", content: data.additional.leadership },
+                { title: "CERTIFICATIONS", content: data.additional.certifications }
+            ];
+
+            additionalSections.forEach(section => {
+                if (section.content && section.content.trim()) {
+                    yPos = checkPageBreak(doc, yPos, 30, margin);
+                    yPos = addSectionHeader(doc, section.title, yPos, pageWidth, margin);
+                    yPos += 3;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    const contentLines = doc.splitTextToSize(section.content, maxWidth);
+                    doc.text(contentLines, margin, yPos);
+                    yPos += contentLines.length * lineHeight + 5;
+                }
+            });
+
+            // Relevant Coursework
+            if (data.additional.coursework) {
+                // Split the text to fit within page width
+                const courseworkLines = doc.splitTextToSize(data.additional.coursework, maxWidth);
+
+                // Check if we have enough space for all lines
+                const linesHeight = courseworkLines.length * lineHeight;
+                yPos = checkPageBreak(doc, yPos, linesHeight + 15, margin);
+
+                yPos = addSectionHeader(doc, "RELEVANT COURSEWORK", yPos, pageWidth, margin);
+                yPos += 3;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.text(courseworkLines, margin, yPos);
+                yPos += linesHeight + 10;
+            }
+
+            // Languages
+            if (data.additional.languages) {
+                yPos = checkPageBreak(doc, yPos, 25, margin);
+                yPos = addSectionHeader(doc, "LANGUAGES", yPos, pageWidth, margin);
+                yPos += 3;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.text(data.additional.languages, margin, yPos);
+                yPos += 10;
+            }
+
+            // Add page numbers if multiple pages
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, doc.internal.pageSize.height - 10);
+            }
+
+            // Save PDF
+            doc.save(`${data.personal.name.replace(/\s+/g, '_') || 'Resume'}.pdf`);
+        }
+
+        // Helper function to add section headers
+        function addSectionHeader(doc, title, yPos, pageWidth, margin) {
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text(title, margin, yPos);
+
+            // Add underline
+            doc.setLineWidth(0.3);
+            const titleWidth = doc.getTextWidth(title);
+            doc.line(margin, yPos + 1, margin + titleWidth, yPos + 1);
+
+            // Reset font size
+            doc.setFontSize(10);
+            return yPos + 2;
+        }
+
+        // Updated checkPageBreak function
+        function checkPageBreak(doc, yPos, requiredSpace, margin) {
+            const pageHeight = doc.internal.pageSize.height;
+            if (yPos + requiredSpace > pageHeight - margin) {
+                doc.addPage();
+                return margin + 5;
+            }
+            return yPos;
+        }
+
+        // Format date for PDF
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr + '-01');
+            return date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+        }
+
+        function addSection(doc, title, yPos) {
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(title, 20, yPos);
+            doc.setLineWidth(0.5);
+            doc.line(20, yPos + 2, doc.internal.pageSize.width - 20, yPos + 2);
+            doc.setFontSize(10);
+        }
+
+        function checkPageBreak(doc, yPos, requiredSpace) {
+            const pageHeight = doc.internal.pageSize.height;
+            if (yPos + requiredSpace > pageHeight - 20) {
+                doc.addPage();
+                return 20;
+            }
+            return yPos;
+        }
+    </script>
+</body>
+
 </html>
